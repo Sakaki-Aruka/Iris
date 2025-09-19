@@ -1,23 +1,23 @@
 package profile
 
 type Profile struct {
-	Name     string
-	KeepLogs bool
+	Name     string `json:"name"`
+	KeepLogs bool   `json:"keep_logs"`
 }
 
 type ScriptRef struct {
-	Inline   string
-	FilePath string
+	Inline   string `json:"inline"`
+	FilePath string `json:"file_path"`
 }
 
 type AutoRestartCfg struct {
-	Max           uint
-	TriggerCodes  []int
-	StartupScript ScriptRef
-	Scheduled     []Schedule
+	Max           uint       `json:"max"`
+	TriggerCodes  []int      `json:"trigger_codes"`
+	StartupScript ScriptRef  `json:"startup_script"`
+	Scheduled     []Schedule `json:"scheduled"`
 }
 
 type Schedule struct {
-	Timing  string
-	Profile string
+	Timing  string `json:"timing"`
+	Profile string `json:"profile"`
 }
