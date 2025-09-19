@@ -1,25 +1,23 @@
 package profile
 
 type Profile struct {
-	name          string
-	keepLogs      bool
-	startupScript ScriptOr
-	autoRestart   AutoRestart
+	Name     string
+	KeepLogs bool
 }
 
-type AutoRestart struct {
-	max           uint
-	triggerCode   []int
-	startupScript ScriptOr
-	schedule      Schedule
+type ScriptRef struct {
+	Inline   string
+	FilePath string
 }
 
-type ScriptOr struct {
-	content string
-	isFile  bool
+type AutoRestartCfg struct {
+	Max           uint
+	TriggerCodes  []int
+	StartupScript ScriptRef
+	Scheduled     []Schedule
 }
 
 type Schedule struct {
-	timing  string
-	profile string
+	Timing  string
+	Profile string
 }
