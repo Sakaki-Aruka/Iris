@@ -26,14 +26,16 @@ syntax: `iris session [list | create | connect | send | restart] [options...]`
 ### Options
 - ((create) `--log-file=[filename]`)
 - ((create) `--keep-logs`)
-- (create) `--startup-script=[script | @filename]`
+- (create) `--name=[name]`
+- (create) `--startup-script=[script]`
 - (create) `--profile=[profile name]`
 - (create) `--save-session`
 - (create) `--auto-restart`
 - (create) `--auto-restart-max=[number > 0]` (default = `3`)
-- (create) `--auto-restart-trigger-code=[exit code array (comma separated)]` (default = `[1]`)
-- (create) `--auto-restart-startup-script=[script | @filename]` (default = None)
-- ((create) `--scheduled-script=[crontab date style] [profile]`)
+- (create) `--auto-restart-trigger-code=[exit code array (comma separated)]` (default = `[]`)
+- (create) `--auto-restart-startup-script=[script]` (default = None)
+- ((create) `--scheduled-script-timing=[crontab date style]`)
+- ((create) `--scheduled-script=[script]`)
 - (connect | send | restart) `--sesssion=[session name]`
 - (connect) `--previous=[lines >= 0 | all]` (default = `0`)
 - (send) `--command=[command | @filename]`
