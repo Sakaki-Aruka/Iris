@@ -34,6 +34,6 @@ syntax: `iris session [list | create | connect | send | restart] [options...]`
 - (create) `--auto-restart-trigger-code=[exit code array (comma separated)]` (default = `[1]`)
 - (create) `--auto-restart-startup-script=[script | @filename]` (default = None)
 - ((create) `--scheduled-script=[crontab date style] [profile]`)
-- (connect | restart) `--sesssion=[session name]`
+- (connect | send | restart) `--sesssion=[session name]`
 - (connect) `--previous=[lines >= 0 | all]` (default = `0`)
 - (send) `--command=[command | @filename]`
