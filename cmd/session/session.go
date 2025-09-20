@@ -73,7 +73,9 @@ var sessionCreateCmd = &cobra.Command{
 			return err
 		}
 
-		// TODO: impl start session
+		if err := s.Connect(); err != nil {
+			return err
+		}
 		return nil
 	},
 }
@@ -87,11 +89,12 @@ var sessionConnectCmd = &cobra.Command{
 			return err
 		}
 
-		if _, exists := session.Manager.Sessions[name]; !exists {
+		s, exists := session.Manager.Sessions[name]
+		if !exists {
 			return fmt.Errorf("no session are there what named '%s'", name)
 		}
 
-		return session.Manager.Connect(name)
+		return s.Connect()
 	},
 }
 
@@ -104,11 +107,12 @@ var sessionSendCmd = &cobra.Command{
 			return err
 		}
 
-		if _, exists := session.Manager.Sessions[name]; !exists {
+		s, exists := session.Manager.Sessions[name]
+		if !exists {
 			return fmt.Errorf("no session are there what named '%s'", name)
 		}
 
-		return session.Manager.Connect(name)
+		return s.Connect()
 	},
 }
 
