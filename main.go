@@ -18,11 +18,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	cmd.Execute()
 	if err := profile.LoadExistProfiles(); err != nil {
 		fmt.Println("failed to load profiles")
 		os.Exit(1)
 	}
+
+	cmd.Execute()
 }
 
 func CreateConfigDir() error {

@@ -100,9 +100,25 @@ var profileTemplateCmd = &cobra.Command{
 	},
 }
 
+var profileListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "Show all loaded profiles",
+	Run: func(cmd *cobra.Command, args []string) {
+		for _, p := range profile.Profiles {
+			j, err := json.Marshal(p)
+			if err != nil {
+				fmt.Printf("failed to marshal a profile to a json string. (name=%s)\n", p.Name)
+				continue
+			}
+			fmt.Println(string(j))
+		}
+	},
+}
+
 func init() {
 	Cmd.AddCommand(profileCreateCmd)
 	Cmd.AddCommand(profileDeleteCmd)
 	Cmd.AddCommand(profileUpdateCmd)
 	Cmd.AddCommand(profileTemplateCmd)
+	Cmd.AddCommand(profileListCmd)
 }
