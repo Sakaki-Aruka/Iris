@@ -2,7 +2,9 @@ package profile
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"path/filepath"
 )
 
 type Profile struct {
@@ -20,31 +22,12 @@ type AutoRestartCfg struct {
 }
 
 type Schedule struct {
-	Timing  string `json:"timing"`
-	Profile string `json:"profile"`
+	Timing string `json:"timing"`
+	Script string `json:"script"`
 }
 
-var Profiles []Profile = []Profile{}
-
-func NewDefaultProfile(name string) *Profile {
-	return &Profile{
-		Name:          name,
-		KeepLogs:      false,
-		StartupScript: "echo Hello Iris",
-		AutoRestart: AutoRestartCfg{
-			Max:          0,
-			TriggerCodes: []int{},
-		},
-	}
-}
-
-func SaveProfile(filename string, p *Profile) error {
-	data, err := json.MarshalIndent(p, "", "")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(filename, data, 0644)
-}
+var Profiles = make(map[string]*Profile)
+var ProfilesWithPath = make(map[string]string) // key: ProfileName, value: FilePath
 
 func LoadProfile(filename string) (*Profile, error) {
 	data, err := os.ReadFile(filename)
@@ -57,6 +40,46 @@ func LoadProfile(filename string) (*Profile, error) {
 		return nil, err
 	}
 	return &p, nil
+}
+
+func AddProfileWithFile(p Profile, path string) {
+	Profiles[p.Name] = &p
+	ProfilesWithPath[p.Name] = path
+}
+
+func GetProfileDir() (string, error) {
+	confDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get user config dir")
+	}
+	return filepath.Join(confDir, "iris/profile"), nil
+}
+
+func LoadExistProfiles() error {
+	// for tool init process
+	// Load all profiles
+	confDir, err := GetProfileDir()
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+	entries, err := os.ReadDir(confDir)
+	if err != nil {
+		return fmt.Errorf("failed to get files from user config dir")
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		filename := filepath.Join(confDir, entry.Name())
+		p, err := LoadProfile(filename)
+		if err != nil {
+			continue
+		}
+		AddProfileWithFile(*p, filename)
+	}
+	return nil
 }
 
 func DeleteProfile(filename string) error {

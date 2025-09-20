@@ -1,9 +1,9 @@
 package session
 
 import (
+	"Iris/internal/profile"
 	"Iris/internal/session"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -16,7 +16,7 @@ var Cmd = &cobra.Command{
 var ( // for create
 	name                     string
 	startupScript            string
-	profile                  string
+	profileName              string
 	saveSession              bool
 	autoRestart              bool
 	autoRestartMax           uint
@@ -27,8 +27,8 @@ var ( // for create
 )
 
 var (
-	_session string // for connect | send | restart
-	command  string // for send
+	sessionName string // for connect | send | restart
+	command     string // for send
 )
 
 var sessionListCmd = &cobra.Command{
@@ -45,8 +45,36 @@ var sessionCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new session",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		var p profile.Profile
+		prof, exists := profile.Profiles[profileName]
+		if exists {
+			p = *prof
+		} else {
+			schedule := profile.Schedule{
+				Timing: scheduleTiming,
+				Script: scheduleScript,
+			}
+			autoRestartCfg := profile.AutoRestartCfg{
+				Max:           autoRestartMax,
+				TriggerCodes:  autoRestartTriggerCode,
+				StartupScript: autoRestartStartupScript,
+				Scheduled:     []profile.Schedule{schedule},
+			}
+			p = profile.Profile{
+				Name:          profileName,
+				KeepLogs:      false, // TODO: impl
+				StartupScript: startupScript,
+				AutoRestart:   autoRestartCfg,
+			}
+		}
 
-		// TODO: impl here
+		s, err := session.Manager.Create(p)
+		if err != nil {
+			return err
+		}
+
+		// TODO: impl start session
+		return nil
 	},
 }
 
@@ -90,6 +118,7 @@ var sessionRestartCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		//
 		// TODO: impl here
+		return nil
 	},
 }
 
@@ -99,7 +128,7 @@ func init() {
 	Cmd.AddCommand(sessionCreateCmd)
 	sessionCreateCmd.Flags().StringVar(&name, "name", "", "name of a session")
 	sessionCreateCmd.Flags().StringVar(&startupScript, "startup-script", "", "scripts what runs on startup")
-	sessionCreateCmd.Flags().StringVar(&profile, "profile", "", "profile name of will applied")
+	sessionCreateCmd.Flags().StringVar(&profileName, "profile", "", "name of will applied profile")
 	sessionCreateCmd.Flags().BoolVar(&saveSession, "save-session", false, "save session or not")
 	sessionCreateCmd.Flags().BoolVar(&autoRestart, "auto-restart", false, "auto restart session or not")
 	sessionCreateCmd.Flags().UintVar(&autoRestartMax, "auto-restart-max", 0, "max restart times")
@@ -119,7 +148,7 @@ func init() {
 	}
 	Cmd.AddCommand(sessionRestartCmd)
 	for _, c := range []*cobra.Command{sessionConnectCmd, sessionSendCmd, sessionRestartCmd} {
-		c.Flags().StringVar(&_session, "session", "", "target session name")
+		c.Flags().StringVar(&sessionName, "session", "", "target session name")
 		if err := c.MarkFlagRequired("session"); err != nil {
 			panic(err)
 		}

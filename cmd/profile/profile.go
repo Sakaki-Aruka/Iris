@@ -3,6 +3,7 @@ package profile
 import (
 	"Iris/internal/profile"
 	"fmt"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -18,10 +19,12 @@ var profileCreateCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filename := args[0]
-		//
-		//p := profile.NewDefaultProfile("default")
-		//return profile.SaveProfile(filename, p)
-		// TODO: impl here
+		p, err := profile.LoadProfile(filename)
+		if err != nil {
+			return fmt.Errorf("failed to load profile defined file")
+		}
+		profile.AddProfileWithFile(*p, filename)
+		return nil
 	},
 }
 
@@ -30,7 +33,19 @@ var profileDeleteCmd = &cobra.Command{
 	Short: "Delete a profile JSON file",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return profile.DeleteProfile(args[0])
+		profileName := args[0]
+		p, pExists := profile.Profiles[profileName]
+		if pExists {
+			delete(profile.Profiles, p.Name)
+		}
+		path, fExists := profile.ProfilesWithPath[profileName]
+		if fExists {
+			delete(profile.ProfilesWithPath, p.Name)
+			if err := profile.DeleteProfile(path); err != nil {
+				return err
+			}
+		}
+		return nil
 	},
 }
 
@@ -39,12 +54,19 @@ var profileUpdateCmd = &cobra.Command{
 	Short: "Reload/Update a profile",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		p, err := profile.LoadProfile(args[0])
+		configDir, err := profile.GetProfileDir()
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+		path := filepath.Join(configDir, args[0])
+		p, err := profile.LoadProfile(path)
 		if err != nil {
 			return err
 		}
+
 		fmt.Printf("Profile loaded: %+v\n", p)
-		// TODO: impl (when a new conflicts with old)
+		profile.AddProfileWithFile(*p, path)
 		return nil
 	},
 }
