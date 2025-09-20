@@ -7,6 +7,7 @@ Base: `iris`
 ## Profile
 syntax: 
 - `iris profile [create | delete | update] [@filename]`
+- `iris profile template`
 
 ## Profile file format
 - name: [This profile name]
