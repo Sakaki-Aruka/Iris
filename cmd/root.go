@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"Iris/cmd/profile"
+	"Iris/cmd/session"
 	"fmt"
 	"os"
 
@@ -23,4 +24,5 @@ func Execute() {
 
 func init() {
 	rootCmd.AddCommand(profile.Cmd)
+	rootCmd.AddCommand(session.Cmd)
 }
