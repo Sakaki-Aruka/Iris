@@ -2,8 +2,6 @@ package sys
 
 import (
 	"Iris/daemon"
-	"Iris/util"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -14,15 +12,9 @@ var Cmd = &cobra.Command{
 }
 
 var startCmd = &cobra.Command{
+	Use:   "start",
 	Short: "start Iris daemon",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := util.GetSocketPath()
-		if err != nil {
-			return err
-		}
-		if _, err := os.Stat(s); err != nil {
-			return err
-		}
 		if err := daemon.StartDaemon(); err != nil {
 			return err
 		}
