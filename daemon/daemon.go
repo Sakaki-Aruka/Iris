@@ -10,19 +10,16 @@ import (
 	"net"
 	"net/rpc"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 type CreateArg struct {
 	Profile *profile.Profile
 }
 
-type CreateReply struct {
-	Session *session.Session
-	Err     *string
-}
-
 type SessionArg struct {
-	Session *session.Session
+	SessionName *string //*session.Session
 }
 
 type Reply struct {
@@ -36,19 +33,18 @@ type SendArg struct {
 
 type IrisService struct{}
 
-func (i *IrisService) Create(arg *CreateArg, reply *CreateReply) error {
+func (i *IrisService) Create(arg *CreateArg, reply *Reply) error {
 	if reply == nil {
 		return fmt.Errorf("received pointer 'reply' points nil")
 	}
-	s, err := session.Manager.Create(*arg.Profile)
+	err := session.Manager.Create(*arg.Profile)
 	errStr := ""
 	if err != nil {
 		errStr = err.Error()
 	}
 
-	*reply = CreateReply{
-		Session: s,
-		Err:     &errStr,
+	*reply = Reply{
+		Err: &errStr,
 	}
 	return err
 }
@@ -57,7 +53,8 @@ func (i *IrisService) Connect(arg *SessionArg, reply *Reply) error {
 	if reply == nil {
 		return fmt.Errorf("received pointer 'reply' points nil")
 	}
-	err := arg.Session.Connect()
+
+	err := session.Connect(*arg.SessionName)
 	errStr := ""
 	if err != nil {
 		errStr = err.Error()
@@ -70,9 +67,21 @@ func (i *IrisService) Connect(arg *SessionArg, reply *Reply) error {
 	return err
 }
 
-func (i *IrisService) Detach(arg *SessionArg, reply *struct{}) error {
-	arg.Session.Detach()
-	return nil
+func (i *IrisService) Detach(arg *SessionArg, reply *Reply) error {
+	if reply == nil {
+		return fmt.Errorf("received pointer 'reply' points nil")
+	}
+
+	err := session.Detach(*arg.SessionName)
+	errStr := ""
+	if err != nil {
+		errStr = err.Error()
+	}
+
+	*reply = Reply{
+		Err: &errStr,
+	}
+	return err
 }
 
 func (i *IrisService) Send(arg *SendArg, reply *Reply) error {
@@ -111,8 +120,15 @@ func StartDaemon() error {
 	if err := rpc.RegisterName(ipc.ServiceName, service); err != nil {
 		return err
 	}
-
 	defer listener.Close()
+
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-signalCh
+		listener.Close()
+		os.Exit(0)
+	}()
 
 	for {
 		conn, err := listener.Accept()

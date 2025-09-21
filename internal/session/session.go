@@ -38,23 +38,23 @@ var Manager = &SessionManager{
 	Sessions: make(map[string]*Session),
 }
 
-func (m *SessionManager) Create(p profile.Profile) (*Session, error) {
+func (m *SessionManager) Create(p profile.Profile) error {
 	args := strings.Fields(p.StartupScript)
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Env = os.Environ()
 	stdinPipe, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	stderrPipe, err := cmd.StderrPipe()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	s := &Session{
@@ -76,14 +76,21 @@ func (m *SessionManager) Create(p profile.Profile) (*Session, error) {
 	}
 
 	if err := s.Cmd.Start(); err != nil {
-		return nil, err
+		return err
 	}
 
 	m.Sessions[p.Name] = s
-	return s, nil
+	if err := Connect(s.Name); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (s *Session) Connect() error {
+func Connect(name string) error {
+	s, exists := Manager.Sessions[name]
+	if !exists {
+		return fmt.Errorf("no such session are there")
+	}
 	go io.Copy(os.Stdout, s.StdoutReader)
 	go io.Copy(os.Stderr, s.StderrReader)
 
@@ -111,12 +118,18 @@ func (s *Session) Connect() error {
 	}()
 
 	<-s.detachCh
-	s.Detach()
+	if err := Detach(s.Name); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (s *Session) Detach() {
+func Detach(name string) error {
+	s, exists := Manager.Sessions[name]
+	if !exists {
+		return fmt.Errorf("no such session are there")
+	}
 	log.Println("Detaching session...")
 	if s.StdinWriter != nil {
 		s.StdinWriter.Close()
@@ -131,6 +144,7 @@ func (s *Session) Detach() {
 	}
 
 	log.Println("Session detached.")
+	return nil
 }
 
 func (m *SessionManager) Send(name, command string) error {

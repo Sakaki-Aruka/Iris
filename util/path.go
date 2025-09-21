@@ -38,3 +38,11 @@ func GetSocketPath() (string, error) {
 	}
 	return filepath.Join(d, ipc.SocketName), nil
 }
+
+func GetDaemonPidPath() (string, error) {
+	d, err := GetConfDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(d, ipc.PidFileName), nil
+}

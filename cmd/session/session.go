@@ -1,6 +1,7 @@
 package session
 
 import (
+	"Iris/internal/client"
 	"Iris/internal/profile"
 	"Iris/internal/session"
 	"fmt"
@@ -69,15 +70,11 @@ var sessionCreateCmd = &cobra.Command{
 			}
 		}
 
-		s, err := session.Manager.Create(p)
-		if err != nil {
+		if err := client.Create(&p); err != nil {
 			return err
+		} else {
+			return nil
 		}
-
-		if err := s.Connect(); err != nil {
-			return err
-		}
-		return nil
 	},
 }
 
@@ -95,7 +92,7 @@ var sessionConnectCmd = &cobra.Command{
 			return fmt.Errorf("no session are there what named '%s'", name)
 		}
 
-		return s.Connect()
+		return client.Connect(s.Name)
 	},
 }
 
@@ -107,13 +104,17 @@ var sessionSendCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		c, err := cmd.Flags().GetString("command")
+		if err != nil {
+			return err
+		}
 
 		s, exists := session.Manager.Sessions[name]
 		if !exists {
 			return fmt.Errorf("no session are there what named '%s'", name)
 		}
 
-		return s.Connect()
+		return client.Send(s.Name, c)
 	},
 }
 
