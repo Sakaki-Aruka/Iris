@@ -40,7 +40,7 @@ func GetSocketPath() (string, error) {
 }
 
 func GetDaemonPidPath() (string, error) {
-	d, err := GetConfDir()
+	d, err := GetSystemDir()
 	if err != nil {
 		return "", err
 	}

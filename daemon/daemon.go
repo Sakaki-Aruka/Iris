@@ -11,6 +11,7 @@ import (
 	"net/rpc"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 )
 
@@ -105,9 +106,26 @@ func StartDaemon() error {
 		return err
 	}
 
-	if err := os.Remove(sock); err != nil {
+	if err := os.RemoveAll(sock); err != nil {
 		return err
 	}
+
+	pid, err := util.GetDaemonPidPath()
+	if err != nil {
+		return err
+	} else if _, err := os.Stat(pid); err == nil {
+		fmt.Println("Iris pid file has already exists. The daemon is running or try to read an old pid file.")
+		return err
+	}
+
+	if pidWriteErr := os.WriteFile(pid, []byte(strconv.Itoa(os.Getpid())), 0770); pidWriteErr != nil {
+		return pidWriteErr
+	}
+	defer func() {
+		if err := os.Remove(pid); err != nil {
+			fmt.Println("failed to remove pid file. \n" + err.Error())
+		}
+	}()
 
 	listener, err := net.Listen("unix", sock)
 	if err != nil {
@@ -117,13 +135,13 @@ func StartDaemon() error {
 	defer listener.Close()
 
 	service := IrisService{}
-	if err := rpc.RegisterName(ipc.ServiceName, service); err != nil {
+	if err := rpc.RegisterName(ipc.ServiceName, &service); err != nil {
 		return err
 	}
 	defer listener.Close()
 
 	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	go func() {
 		<-signalCh
 		listener.Close()
@@ -134,10 +152,11 @@ func StartDaemon() error {
 		conn, err := listener.Accept()
 		if err != nil {
 			if errors.Is(err, net.ErrClosed) {
-				return err
+				break
 			}
 			continue
 		}
 		go rpc.ServeConn(conn)
 	}
+	return nil
 }
