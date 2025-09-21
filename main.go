@@ -3,9 +3,9 @@ package main
 import (
 	"Iris/cmd"
 	"Iris/internal/profile"
+	"Iris/util"
 	"fmt"
 	"os"
-	"path/filepath"
 )
 
 func main() {
@@ -27,13 +27,12 @@ func main() {
 }
 
 func CreateConfigDir() error {
-	confDir, err := os.UserConfigDir()
+	confDir, err := util.GetConfDir()
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 
-	confDir = filepath.Join(confDir, "iris")
 	if _, err := os.Stat(confDir); err != nil { // exists check
 		// '~/.config/iris' not exists.
 		mkdErr := os.Mkdir(confDir, 0770)
@@ -46,7 +45,7 @@ func CreateConfigDir() error {
 }
 
 func CreateProfileDir() error {
-	confDir, err := profile.GetProfileDir()
+	confDir, err := util.GetProfileDir()
 	if err != nil {
 		fmt.Println(err)
 		return err

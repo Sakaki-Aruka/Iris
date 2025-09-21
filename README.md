@@ -7,7 +7,7 @@ Base: `iris`
 ## Profile
 syntax: 
 - `iris profile [create | delete | update] [@filename]`
-- `iris profile [template | list]`
+- `iris profile list`
 
 ## Profile file format
 - name: [This profile name]
@@ -40,3 +40,9 @@ syntax: `iris session [list | create | connect | send | restart] [options...]`
 - (connect | send | restart) `--sesssion=[session name]`
 - (connect) `--previous=[lines >= 0 | all]` (default = `0`)
 - (send) `--command=[command | @filename]`
+
+## Template
+syntax: `iris template [profile | systemd]`
+
+## Sys
+syntax: `iris daemon [start | (stop)]`
