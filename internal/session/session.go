@@ -12,7 +12,7 @@ import (
 
 type Session struct {
 	Name         string
-	profile      *profile.Profile
+	Profile      *profile.Profile
 	Cmd          *exec.Cmd
 	LogFile      string
 	Options      SessionOptions
@@ -59,7 +59,7 @@ func (m *SessionManager) Create(p profile.Profile) (*Session, error) {
 
 	s := &Session{
 		Name:    p.Name,
-		profile: &p,
+		Profile: &p,
 		Cmd:     cmd,
 		LogFile: "",
 		Options: SessionOptions{

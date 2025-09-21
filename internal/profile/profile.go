@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"Iris/util"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -47,18 +48,10 @@ func AddProfileWithFile(p Profile, path string) {
 	ProfilesWithPath[p.Name] = path
 }
 
-func GetProfileDir() (string, error) {
-	confDir, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get user config dir")
-	}
-	return filepath.Join(confDir, "iris/profile"), nil
-}
-
 func LoadExistProfiles() error {
 	// for tool init process
 	// Load all profiles
-	confDir, err := GetProfileDir()
+	confDir, err := util.GetProfileDir()
 	if err != nil {
 		fmt.Println(err.Error())
 		return err

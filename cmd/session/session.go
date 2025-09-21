@@ -35,6 +35,7 @@ var sessionListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all sessions",
 	Run: func(cmd *cobra.Command, args []string) {
+		// TODO: impl RPC client
 		for name, s := range session.Manager.Sessions {
 			fmt.Printf("- %s (running=%v)\n", name, !s.Cmd.ProcessState.Exited())
 		}

@@ -2,6 +2,7 @@ package profile
 
 import (
 	"Iris/internal/profile"
+	"Iris/util"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -55,7 +56,7 @@ var profileUpdateCmd = &cobra.Command{
 	Short: "Reload/Update a profile",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		configDir, err := profile.GetProfileDir()
+		configDir, err := util.GetProfileDir()
 		if err != nil {
 			fmt.Println(err.Error())
 			return err
