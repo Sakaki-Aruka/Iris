@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 type Session struct {
@@ -38,7 +39,9 @@ var Manager = &SessionManager{
 }
 
 func (m *SessionManager) Create(p profile.Profile) (*Session, error) {
-	cmd := exec.Command(p.StartupScript)
+	args := strings.Fields(p.StartupScript)
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Env = os.Environ()
 	stdinPipe, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
@@ -110,7 +113,6 @@ func (s *Session) Connect() error {
 	<-s.detachCh
 	s.Detach()
 
-	fmt.Printf("Connected to session %s (PID=%d)", s.Name, s.Cmd.Process.Pid)
 	return nil
 }
 
