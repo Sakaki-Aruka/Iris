@@ -10,11 +10,15 @@ import (
 
 func main() {
 
-	if err := CreateConfigDir(); err != nil {
+	if err := check(util.GetConfDir()); err != nil {
 		os.Exit(1)
 	}
 
-	if err := CreateProfileDir(); err != nil {
+	if err := check(util.GetProfileDir()); err != nil {
+		os.Exit(1)
+	}
+
+	if err := check(util.GetSystemDir()); err != nil {
 		os.Exit(1)
 	}
 
@@ -26,35 +30,15 @@ func main() {
 	cmd.Execute()
 }
 
-func CreateConfigDir() error {
-	confDir, err := util.GetConfDir()
+func check(d string, err error) error {
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
-
-	if _, err := os.Stat(confDir); err != nil { // exists check
-		// '~/.config/iris' not exists.
-		mkdErr := os.Mkdir(confDir, 0770)
-		if mkdErr != nil {
-			fmt.Printf("failed to create Iris config dir. (%s)\n", confDir)
-			return mkdErr
-		}
-	}
-	return nil
-}
-
-func CreateProfileDir() error {
-	confDir, err := util.GetProfileDir()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	if _, err := os.Stat(confDir); err != nil { // exists check
-		mkdErr := os.Mkdir(confDir, 0770)
-		if mkdErr != nil {
-			fmt.Printf("failed to create Iris profile config dir. (%s)\n", confDir)
+	
+	if _, err := os.Stat(d); err != nil {
+		if mkdErr := os.Mkdir(d, 0770); mkdErr != nil {
+			fmt.Printf("failed to create %s\n", d)
 			return mkdErr
 		}
 	}
