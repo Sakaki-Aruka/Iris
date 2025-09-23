@@ -1,162 +1,121 @@
 package daemon
 
 import (
-	"Iris/internal/profile"
-	"Iris/internal/session"
-	"Iris/ipc"
-	"Iris/util"
-	"errors"
+	isession "Iris/internal/session"
+	"encoding/json"
 	"fmt"
-	"net"
-	"net/rpc"
-	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
+	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
-type CreateArg struct {
-	Profile *profile.Profile
+var upgrader = websocket.Upgrader{}
+
+type Input struct {
+	SessionName string `json:"session_name"`
+	Action      Action `json:"action"`
+	Line        string `json:"line"`
 }
 
-type SessionArg struct {
-	SessionName *string //*session.Session
+type Action int
+
+const (
+	SEND Action = iota
+	CONNECT
+	DETACH
+	CREATE
+)
+
+type Response struct {
+	Type int
+	Line string
 }
 
-type Reply struct {
-	Err *string
-}
+const (
+	Ok  = 0
+	Err = 1
+)
 
-type SendArg struct {
-	Name    *string
-	Command *string
-}
-
-type IrisService struct{}
-
-func (i *IrisService) Create(arg *CreateArg, reply *Reply) error {
-	if reply == nil {
-		return fmt.Errorf("received pointer 'reply' points nil")
+func (r Response) GetLine() (string, error) {
+	if r.Type != Ok {
+		return "", fmt.Errorf("response type is not 'Ok'. (%v, %v)", r.Type, r.Line)
 	}
-	err := session.Manager.Create(*arg.Profile)
-	errStr := ""
+	return r.Line, nil
+}
+
+var clients = make(map[string][]*websocket.Conn)
+
+func session(writer http.ResponseWriter, reader *http.Request) {
+	conn, err := upgrader.Upgrade(writer, reader, nil)
 	if err != nil {
-		errStr = err.Error()
+		fmt.Println("failed to upgrade connection to websocket from http")
+		return
 	}
+	defer conn.Close()
 
-	*reply = Reply{
-		Err: &errStr,
-	}
-	return err
-}
+	for {
+		messageType, message, err := conn.ReadMessage()
+		if err != nil {
+			break
+		}
 
-func (i *IrisService) Connect(arg *SessionArg, reply *Reply) error {
-	if reply == nil {
-		return fmt.Errorf("received pointer 'reply' points nil")
-	}
+		if messageType != websocket.TextMessage {
+			continue
+		}
 
-	err := session.Connect(*arg.SessionName)
-	errStr := ""
-	if err != nil {
-		errStr = err.Error()
-	}
+		var i Input
+		if err := json.Unmarshal(message, &i); err != nil {
+			continue
+		}
 
-	*reply = Reply{
-		Err: &errStr,
-	}
+		switch i.Action {
+		case SEND:
+			{
+				if err := isession.Send(i.SessionName, i.Line, conn); err != nil {
+					r := Response{Type: Err, Line: err.Error()}
+					d, _ := json.Marshal(r)
+					if err := conn.WriteMessage(websocket.TextMessage, d); err != nil {
+						break
+					}
+				}
+			}
+		case CONNECT:
+			{
+				//TODO: impl
+				//if err := isession.Connect(i.SessionName); err != nil {
+				//	r := Response{Type: Err, Line: err.Error()}
+				//	d, _ := json.Marshal(r)
+				//	if err := conn.WriteMessage(websocket.TextMessage, d); err != nil {
+				//		break
+				//	}
+				//}
+			}
+		case DETACH:
+			{
+				//TODO: impl
+				//if err := isession.Detach(i.SessionName); err != nil {
+				//	r := Response{Type: Err, Line: err.Error()}
+				//	d, _ := json.Marshal(r)
+				//	if err := conn.WriteMessage(websocket.TextMessage, d); err != nil {
+				//		break
+				//	}
+				//}
+			}
 
-	return err
-}
-
-func (i *IrisService) Detach(arg *SessionArg, reply *Reply) error {
-	if reply == nil {
-		return fmt.Errorf("received pointer 'reply' points nil")
+		case CREATE:
+			{
+				//TODO: impl
+				//var p profile.Profile
+				//if err := json.Unmarshal([]byte(i.Line), &p); err != nil {
+				//	r := Response{Type: Err, Line: err.Error()}
+				//}
+				//if err := isession.Create()
+			}
+		}
 	}
-
-	err := session.Detach(*arg.SessionName)
-	errStr := ""
-	if err != nil {
-		errStr = err.Error()
-	}
-
-	*reply = Reply{
-		Err: &errStr,
-	}
-	return err
-}
-
-func (i *IrisService) Send(arg *SendArg, reply *Reply) error {
-	if reply == nil {
-		return fmt.Errorf("received pointer 'reply' points nil")
-	}
-	err := session.Manager.Send(*arg.Name, *arg.Command)
-	errStr := ""
-	if err != nil {
-		errStr = err.Error()
-	}
-	*reply = Reply{
-		Err: &errStr,
-	}
-	return err
 }
 
 func StartDaemon() error {
-	sock, err := util.GetSocketPath()
-	if err != nil {
-		return err
-	}
-
-	if err := os.RemoveAll(sock); err != nil {
-		return err
-	}
-
-	pid, err := util.GetDaemonPidPath()
-	if err != nil {
-		return err
-	} else if _, err := os.Stat(pid); err == nil {
-		fmt.Println("Iris pid file has already exists. The daemon is running or try to read an old pid file.")
-		return err
-	}
-
-	if pidWriteErr := os.WriteFile(pid, []byte(strconv.Itoa(os.Getpid())), 0770); pidWriteErr != nil {
-		return pidWriteErr
-	}
-	defer func() {
-		if err := os.Remove(pid); err != nil {
-			fmt.Println("failed to remove pid file. \n" + err.Error())
-		}
-	}()
-
-	listener, err := net.Listen("unix", sock)
-	if err != nil {
-		fmt.Println("Iris daemon boot error")
-		return err
-	}
-	defer listener.Close()
-
-	service := IrisService{}
-	if err := rpc.RegisterName(ipc.ServiceName, &service); err != nil {
-		return err
-	}
-	defer listener.Close()
-
-	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-	go func() {
-		<-signalCh
-		listener.Close()
-		os.Exit(0)
-	}()
-
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			if errors.Is(err, net.ErrClosed) {
-				break
-			}
-			continue
-		}
-		go rpc.ServeConn(conn)
-	}
+	//TODO: impl
 	return nil
 }
