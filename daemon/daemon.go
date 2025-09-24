@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"Iris/internal/profile"
 	isession "Iris/internal/session"
 	"encoding/json"
 	"fmt"
@@ -82,34 +83,44 @@ func session(writer http.ResponseWriter, reader *http.Request) {
 		case CONNECT:
 			{
 				//TODO: impl
-				//if err := isession.Connect(i.SessionName); err != nil {
-				//	r := Response{Type: Err, Line: err.Error()}
-				//	d, _ := json.Marshal(r)
-				//	if err := conn.WriteMessage(websocket.TextMessage, d); err != nil {
-				//		break
-				//	}
-				//}
+				if err := isession.Connect(i.SessionName, conn); err != nil {
+					r := Response{Type: Err, Line: err.Error()}
+					d, _ := json.Marshal(r)
+					if err := conn.WriteMessage(websocket.TextMessage, d); err != nil {
+						break
+					}
+				}
 			}
 		case DETACH:
 			{
 				//TODO: impl
-				//if err := isession.Detach(i.SessionName); err != nil {
-				//	r := Response{Type: Err, Line: err.Error()}
-				//	d, _ := json.Marshal(r)
-				//	if err := conn.WriteMessage(websocket.TextMessage, d); err != nil {
-				//		break
-				//	}
-				//}
+				if err := isession.Detach(i.SessionName, conn); err != nil {
+					r := Response{Type: Err, Line: err.Error()}
+					d, _ := json.Marshal(r)
+					if err := conn.WriteMessage(websocket.TextMessage, d); err != nil {
+						break
+					}
+				}
 			}
 
 		case CREATE:
 			{
 				//TODO: impl
-				//var p profile.Profile
-				//if err := json.Unmarshal([]byte(i.Line), &p); err != nil {
-				//	r := Response{Type: Err, Line: err.Error()}
-				//}
-				//if err := isession.Create()
+				var p profile.Profile
+				if err := json.Unmarshal([]byte(i.Line), &p); err != nil {
+					r := Response{Type: Err, Line: err.Error()}
+					d, _ := json.Marshal(r)
+					if err := conn.WriteMessage(websocket.TextMessage, d); err != nil {
+						break
+					}
+				}
+				if err := isession.Create(p, conn); err != nil {
+					r := Response{Type: Err, Line: err.Error()}
+					d, _ := json.Marshal(r)
+					if err := conn.WriteMessage(websocket.TextMessage, d); err != nil {
+						break
+					}
+				}
 			}
 		}
 	}
