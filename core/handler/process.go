@@ -34,7 +34,7 @@ func Process(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			if post.Type == structs.Process {
+			if post.Type == structs.ProcessPost {
 				c, err := GetConnected(post.SessionName)
 				if err != nil {
 					continue
@@ -45,7 +45,7 @@ func Process(w http.ResponseWriter, r *http.Request) {
 						connected.Close()
 					}
 				}
-			} else if post.Type == structs.User {
+			} else if post.Type == structs.UserPost {
 				if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
 					log.Println("received write error:", err)
 				}

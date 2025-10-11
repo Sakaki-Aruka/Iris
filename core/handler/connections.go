@@ -7,6 +7,16 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const (
+	SessionNameHeader = "X-WS-SESSION-NAME"
+)
+
+const (
+	ProcessPath  = "/process"
+	RegisterPath = "/register"
+	ConnectPath  = "/connect"
+)
+
 var cMu sync.Mutex
 var pMu sync.Mutex
 
@@ -24,6 +34,16 @@ func GetConnected(sessionName string) (map[*websocket.Conn]bool, error) {
 	return m, nil
 }
 
+func PutConnected(sessionName string, conn *websocket.Conn) {
+	cMu.Lock()
+	defer cMu.Unlock()
+
+	if _, exists := connections[sessionName]; !exists {
+		connections[sessionName] = make(map[*websocket.Conn]bool)
+	}
+	connections[sessionName][conn] = true
+}
+
 func DeleteConnected(sessionName string, conn *websocket.Conn) {
 	cMu.Lock()
 	defer cMu.Unlock()
@@ -34,6 +54,13 @@ func DeleteConnected(sessionName string, conn *websocket.Conn) {
 	delete(connections[sessionName], conn)
 }
 
+func ContainsSession(sessionName string) bool {
+	cMu.Lock()
+	defer cMu.Unlock()
+	_, exists := connections[sessionName]
+	return exists
+}
+
 func DeleteSession(sessionName string) {
 	cMu.Lock()
 	defer cMu.Unlock()
@@ -42,4 +69,33 @@ func DeleteSession(sessionName string) {
 		return
 	}
 	delete(connections, sessionName)
+}
+
+func DeleteProcessSocket(sessionName string) {
+	pMu.Lock()
+	defer pMu.Unlock()
+	if _, exists := processes[sessionName]; !exists {
+		return
+	}
+	delete(processes, sessionName)
+}
+
+func AddProcessSocket(sessionName string, conn *websocket.Conn) {
+	pMu.Lock()
+	defer pMu.Unlock()
+	if _, exists := processes[sessionName]; !exists {
+		return
+	}
+	processes[sessionName] = conn
+}
+
+func GetProcessSocket(sessionName string) (*websocket.Conn, error) {
+	pMu.Lock()
+	defer pMu.Unlock()
+	c, exists := processes[sessionName]
+	if !exists {
+		return nil, fmt.Errorf("'%v' not contained", sessionName)
+	} else {
+		return c, nil
+	}
 }

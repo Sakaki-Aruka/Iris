@@ -1,8 +1,8 @@
 package structs
 
 const (
-	User = iota
-	Process
+	UserPost = iota
+	ProcessPost
 )
 
 type Post struct {
