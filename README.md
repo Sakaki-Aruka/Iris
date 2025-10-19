@@ -25,12 +25,7 @@ syntax:
 syntax: `iris session [list | create | connect | send | restart] [options...]`
 
 ### Options
-- ((create) `--log-file=[filename]`)
-- ((create) `--keep-logs`)
-- (create) `--name=[name]`
-- (create) `--startup-script=[script]`
 - (create) `--profile=[profile name]`
-- (create) `--save-session`
 - (create) `--auto-restart`
 - (create) `--auto-restart-max=[number > 0]` (default = `3`)
 - (create) `--auto-restart-trigger-code=[exit code array (comma separated)]` (default = `[]`)
@@ -39,7 +34,7 @@ syntax: `iris session [list | create | connect | send | restart] [options...]`
 - ((create) `--scheduled-script=[script]`)
 - (connect | send | restart) `--sesssion=[session name]`
 - (connect) `--previous=[lines >= 0 | all]` (default = `0`)
-- (send) `--command=[command | @filename]`
+- (create | send) `--command=[command]`
 
 ## Template
 syntax: `iris template [profile | systemd]`

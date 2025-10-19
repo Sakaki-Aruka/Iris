@@ -15,6 +15,7 @@ const (
 	ProcessPath  = "/process"
 	RegisterPath = "/register"
 	ConnectPath  = "/connect"
+	ListPath     = "/list"
 )
 
 var cMu sync.Mutex
@@ -22,6 +23,12 @@ var pMu sync.Mutex
 
 var connections = make(map[string]map[*websocket.Conn]bool)
 var processes = make(map[string]*websocket.Conn)
+
+func GetConnectionsMap() map[string]map[*websocket.Conn]bool {
+	cMu.Lock()
+	defer cMu.Unlock()
+	return connections
+}
 
 func GetConnected(sessionName string) (map[*websocket.Conn]bool, error) {
 	cMu.Lock()
@@ -83,7 +90,7 @@ func DeleteProcessSocket(sessionName string) {
 func AddProcessSocket(sessionName string, conn *websocket.Conn) {
 	pMu.Lock()
 	defer pMu.Unlock()
-	if _, exists := processes[sessionName]; !exists {
+	if _, exists := processes[sessionName]; exists {
 		return
 	}
 	processes[sessionName] = conn
@@ -98,4 +105,17 @@ func GetProcessSocket(sessionName string) (*websocket.Conn, error) {
 	} else {
 		return c, nil
 	}
+}
+
+func ContainsProcessSocket(sessionName string) bool {
+	pMu.Lock()
+	defer pMu.Unlock()
+	_, exists := processes[sessionName]
+	return exists
+}
+
+func GetProcessMap() map[string]*websocket.Conn {
+	pMu.Lock()
+	defer pMu.Unlock()
+	return processes
 }

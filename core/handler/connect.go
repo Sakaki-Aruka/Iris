@@ -13,7 +13,7 @@ import (
 
 func Connect(w http.ResponseWriter, r *http.Request) {
 	sessionName := r.Header.Get(SessionNameHeader)
-	if !ContainsSession(sessionName) {
+	if !ContainsProcessSocket(sessionName) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(fmt.Sprintf("'%v' not exists session name", sessionName)))
 		return

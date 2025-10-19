@@ -41,6 +41,10 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write(response); err != nil {
 		log.Println("[register] response write error:", err)
 	}
+
+	if err := startProcess(request); err != nil {
+		log.Println("[register] start process error:", err)
+	}
 }
 
 func startProcess(conReq structs.ConnectionRequest) error {
